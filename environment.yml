@@ -1,0 +1,16 @@
+name: slotmap
+channels: [conda-forge]
+dependencies:
+  - python=3.12
+  - gdal>=3.6          # OpenFileGDB write support
+  - geopandas
+  - pyogrio
+  - cartopy
+  - matplotlib
+  - openpyxl
+  - pyyaml
+  - pillow
+  - pytest
+  - pip
+  - pip:
+      - -e .

@@ -1,0 +1,13 @@
+# Example sheet config. Every key is optional; see docs/CONFIG.md.
+mos: "25X (synthetic example)"
+title: "Where the Slots Are: 25X Authorized Positions by Duty Station"
+prepared_by: ""
+value_label: slots
+classes:
+  breaks_pct: [2, 5, 10]
+  labels: [Less likely, Possible, Likely, Most likely]
+  colors: ["#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"]
+frame_overrides: {}
+label_overrides: {}
+notes:
+  - "Synthetic numbers for demonstration only."

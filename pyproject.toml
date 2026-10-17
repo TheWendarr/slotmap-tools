@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slotmap-tools"
+version = "0.1.0"
+description = "Turn duty-station slot tables (any MOS) into GIS layers (GeoPackage + Esri FileGDB) and a multi-frame map sheet."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "geopandas>=0.14",
+  "pyogrio>=0.7",
+  "shapely>=2.0",
+  "pyproj>=3.6",
+  "cartopy>=0.22",
+  "matplotlib>=3.8",
+  "pandas>=2.0",
+  "numpy>=1.24",
+  "openpyxl>=3.1",
+  "pyyaml>=6.0",
+  "pillow>=10.0",
+]
+authors = [{name = "Wendell McGowan"}]
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+fgdb = ["fgdb-tools @ git+https://github.com/TheWendarr/fgdb-tools.git"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+slotmap = "slotmap.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+slotmap = ["data/*.csv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

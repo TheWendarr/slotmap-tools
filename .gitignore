@@ -1,0 +1,15 @@
+# real slot tables can be controlled information - keep them out of git
+/data/
+/work/
+/out/
+*.gdb/
+*.gpkg
+*.gpkg-*
+gazetteer_local_TODO.csv
+# python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+build/
+dist/
