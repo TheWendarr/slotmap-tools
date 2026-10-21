@@ -59,6 +59,32 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--no-gdb", action="store_true", help="Skip the Esri FileGDB output")
     s.add_argument("--export", action="append", choices=["geojson", "shp", "kml"], help="Also export layers (repeatable)")
 
+    s = sub.add_parser("batch", help="Position exports in, every map sheet out (split by CMF / MOS / skill level)")
+    s.add_argument("tables", nargs="+", help="Tables, folders or glob patterns (.xlsx/.xls/.csv/.tsv)")
+    s.add_argument("--out", "-o", default="out/batch", help="Output folder (default: out/batch)")
+    s.add_argument("--config", "-c", default=None, help="Base sheet.yaml applied to every sheet")
+    s.add_argument("--overrides", default=None,
+                   help="Folder of per-MOS tweaks: 35G.yaml (every 35G sheet), 35G3.yaml or 35G_SL3.yaml (one sheet), "
+                        "35.yaml (whole CMF). Default: ./overrides if it exists")
+    s.add_argument("--by", choices=["level", "mos", "both"], default="level",
+                   help="level = one sheet per skill level (grade for WO/officer); mos = one per MOS; both")
+    s.add_argument("--compo", choices=["ALL", "AC", "RC"], default="ALL", help="Filter on a COMPO column")
+    s.add_argument("--mos", nargs="*", default=[], help="Only these MOS (e.g. --mos 35G 35F)")
+    s.add_argument("--cmf", nargs="*", default=[], help="Only these CMFs (e.g. --cmf 35 25)")
+    s.add_argument("--sheet", default=None, help="Excel sheet name (default: every sheet with data)")
+    s.add_argument("--gazetteer", default=None, help="Local gazetteer CSV (default: ./gazetteer_local.csv)")
+    s.add_argument("--basemap", default=None)
+    s.add_argument("--prepared-by", default=None, help="Footer credit for every sheet")
+    s.add_argument("--title", default=None, help="Title template; fields {mos} {level} {level_long} {grade} {cmf} {name}")
+    s.add_argument("--allow-unresolved", action="store_true",
+                   help="Build even if some stations have no coordinates (they are listed as dropped)")
+    s.add_argument("--jobs", "-j", type=int, default=0, help="Sheets built in parallel (default: CPUs, max 4)")
+    s.add_argument("--no-gdb", action="store_true")
+    s.add_argument("--export", action="append", choices=["geojson", "shp", "kml"])
+    s.add_argument("--zip", action="store_true", help="Also zip the whole output folder")
+    s.add_argument("--list", action="store_true", help="Only list the sheets that would be built")
+    s.add_argument("--quiet", action="store_true")
+
     s = sub.add_parser("gazetteer", help="Search the installation gazetteer")
     s.add_argument("action", choices=["find", "list"])
     s.add_argument("query", nargs="?", default="")
@@ -83,9 +109,23 @@ def main(argv: Optional[List[str]] = None) -> int:
               f"slotmap run {d}/slots.csv -c {d}/sheet.yaml -o {d}/out")
         return 0
     if a.cmd == "fetch-basemap":
+        from . import places
         from .basemap import fetch
         print(f"[DONE] basemap in {fetch(Path(a.dest) if a.dest else None, a.force)}")
+        print(f"[DONE] town list in {places.fetch(Path(a.dest) if a.dest else None, a.force)}")
         return 0
+    if a.cmd == "batch":
+        import os
+        from .batch import DEFAULT_TITLE, BatchOptions, run_batch
+        ov = Path(a.overrides) if a.overrides else (Path("overrides") if Path("overrides").is_dir() else None)
+        jobs = a.jobs or min(4, os.cpu_count() or 1)
+        return run_batch(BatchOptions(
+            tables=[Path(t) for t in a.tables], out_dir=Path(a.out), config=Path(a.config) if a.config else None,
+            overrides=ov, by=a.by, compo=a.compo, mos=a.mos, cmf=a.cmf, sheet=a.sheet,
+            gazetteer_local=Path(a.gazetteer) if a.gazetteer else None,
+            basemap_dir=Path(a.basemap) if a.basemap else None, allow_unresolved=a.allow_unresolved, jobs=jobs,
+            write_gdb=not a.no_gdb, exports=a.export or [], prepared_by=a.prepared_by,
+            title=a.title or DEFAULT_TITLE, zip=a.zip, list_only=a.list, quiet=a.quiet))
     if a.cmd == "gazetteer":
         from .gazetteer import Gazetteer, canon_country
         g = Gazetteer.load(Path(a.local) if a.local else None)

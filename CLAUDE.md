@@ -3,7 +3,13 @@
 Follow **AGENTS.md** in this folder — it is the operating guide for building a slot map sheet with this repo
 (setup, transcribing tables, resolving station names, config tuning, QA review, delivery, rules).
 
-Quick loop:
+Position exports (POSCO tables), any number of MOSs/CMFs — one command:
+
+```bash
+slotmap batch data/*.xlsx -o work/batch --prepared-by "<name>"   # exit 3 -> fill gazetteer_local_TODO.csv, re-run
+```
+
+Single table, step by step:
 
 ```bash
 slotmap check data/<table>.csv -o work/<MOS>            # fix names until exit code 0

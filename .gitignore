@@ -6,6 +6,7 @@
 *.gpkg
 *.gpkg-*
 gazetteer_local_TODO.csv
+*_slotmaps.zip
 # python
 __pycache__/
 *.egg-info/

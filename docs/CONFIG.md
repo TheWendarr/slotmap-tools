@@ -13,7 +13,9 @@ Every key is optional. `slotmap init <folder> --mos <MOS>` writes a file with al
 | `date` | `auto` | Footer date; `auto` = today. |
 | `value_label` | `slots` | What one unit is called (`slots`, `authorizations`, `billets`). |
 | `exclude_zero` | `true` | Stations with 0 slots are listed in the footer instead of mapped. |
-| `accept_fuzzy` | `false` | Accept spelling-similarity gazetteer matches without confirmation. |
+| `accept_fuzzy` | `false` | Accept every spelling-similarity gazetteer match without confirmation. |
+| `fuzzy_auto_accept` | `0.92` | Matches at least this similar are accepted anyway and listed in the footer (e.g. `JBSA FT SAM HOUST` → JBSA-Fort Sam Houston). |
+| `use_places` | `true` | Place `(CITY)` names, and otherwise-unknown town names, at the town centre from the GeoNames town list. Footnoted on the sheet. |
 | `symbol_max_diameter_pt` | `36` | Diameter of the largest station circle. Everything else scales by area. |
 | `world_max_diameter_pt` | `64` | Cap for theater circles on the world frame (the legend says when it applies). |
 | `fonts` | `[Inter, Arial, Helvetica, DejaVu Sans]` | First installed family is used. |
@@ -75,3 +77,29 @@ label_overrides:
   white_house: {dir: N, dx: 0, dy: 16}   # non-zero dx/dy (points) draws a leader line
   pentagon: {name: "The Pentagon"}       # change the printed name only
 ```
+
+## Batch overrides (`overrides/`)
+
+`slotmap batch` writes a `sheet.yaml` for every sheet. To tune sheets so the tuning survives the next
+export, put partial configs in an `overrides/` folder (or pass `--overrides DIR`). They are merged on top
+of the generated config, most general first:
+
+| File | Applies to |
+|---|---|
+| `35.yaml` or `CMF35.yaml` | every sheet in CMF 35 |
+| `35G.yaml` | every 35G sheet |
+| `35G_SL3.yaml` or `35G3.yaml` | only the 35G skill level 3 sheet |
+| `255A_CW2.yaml` | only the 255A CW2 sheet |
+
+Any key from this page works, e.g.
+
+```yaml
+# overrides/35G.yaml
+prepared_by: SSG McGowan
+frame_overrides:
+  conus/stewart: {title: "Fort Stewart & Hunter AAF"}
+label_overrides:
+  gordon: {dir: W}
+```
+
+`notes` lists are added to the generated notes rather than replacing them.

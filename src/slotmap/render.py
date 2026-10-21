@@ -40,6 +40,7 @@ class SheetMeta:
     merged: List[str] = field(default_factory=list)         # names combined from duplicate rows
     fuzzy: List[str] = field(default_factory=list)          # "input -> matched" strings
     dropped: List[str] = field(default_factory=list)        # unresolved and dropped
+    towns: List[str] = field(default_factory=list)          # "input -> town" placed at a town centre
     approx_coords: bool = True
 
 
@@ -162,8 +163,12 @@ class SheetRenderer:
         t = self.top
         t.add_patch(Rectangle((x, yy - 0.13), 0.3, 0.26, fc=INK, ec="none"))
         t.text(x + 0.15, yy, f.letter, color="white", ha="center", va="center", fontsize=self.fs(10.5), weight="bold")
-        t.text(x + 0.4, yy, f.title, fontsize=self.fs(11), weight="semibold", color=INK, va="center")
-        t.text(x + w, yy, stats, fontsize=self.fs(8.4), color=MUTED, va="center", ha="right")
+        sh = t.text(x + w, yy, stats, fontsize=self.fs(8.4), color=MUTED, va="center", ha="right")
+        stats_w = sh.get_window_extent(renderer=self.renderer).width / self.fig.dpi
+        th, _ = self._fit(x + 0.4, yy, f.title, 11, w - 0.4 - stats_w - 0.15, 7.5, weight="semibold", color=INK,
+                          va="center")
+        if th.get_window_extent(renderer=self.renderer).width / self.fig.dpi > w - 0.4 - stats_w - 0.15:
+            sh.set_visible(False)        # a narrow frame keeps its title; the stats are in the station key
 
     def stats_text(self, vis: pd.DataFrame, compact: bool) -> str:
         n, s = len(vis), int(vis.SLOTS.sum())
@@ -446,21 +451,23 @@ class SheetRenderer:
             t.text(px + 0.2, ky0 + 0.1, f"+ {n - len(shown)} more stations — see duty_station_table.csv",
                    fontsize=fs(8), color=MUTED, style="italic", va="bottom")
 
+    def _fit(self, x: float, y: float, text: str, size: float, max_w: float, min_size: float, **kw):
+        """Draw text at the largest size <= `size` whose width fits `max_w` inches (never below min_size)."""
+        h = self.top.text(x, y, text, fontsize=self.fs(size), **kw)
+        while size > min_size:
+            bb = h.get_window_extent(renderer=self.renderer)
+            if bb.width / self.fig.dpi <= max_w:
+                break
+            size -= 0.5
+            h.set_fontsize(self.fs(size))
+        return h, size
+
     def draw_title(self) -> None:
         cfg, t, fs, st, total = self.cfg, self.top, self.fs, self.st, self.meta.total
         title = cfg.title
         if cfg.mos and cfg.title == "Where the Slots Are: Authorized Positions by Duty Station":
             title = f"Where the Slots Are: {cfg.mos} Authorized Positions by Duty Station"
         ty = self.H - 0.95
-        t.text(0.4, ty + 0.28, title, fontsize=fs(30), weight="bold", color=INK, va="center")
-        n_all = len(st) + len(self.meta.excluded)
-        sub = cfg.subtitle
-        if sub == "auto":
-            ex = f"; {', '.join(n.title() for n in self.meta.excluded)} {'has' if len(self.meta.excluded) == 1 else 'have'} 0 {cfg.value_label}" if self.meta.excluded else ""
-            sub = (f"{total} authorized {cfg.value_label} across {n_all} duty stations ({len(st)} mapped{ex}).  "
-                   f"Circle size = number of {cfg.value_label}.  Color = how likely an assignment there is, from that "
-                   f"station’s share of all {cfg.value_label}.")
-        t.text(0.4, ty - 0.32, sub, fontsize=fs(13), color=MUTED, va="center")
         top = st.iloc[0]
         kpis = [(f"{top.PCT_CALC:.0f}%", f"of all {cfg.value_label} are at\n{top.NAME}, {top.WHERE}")]
         th = self.th.iloc[0]
@@ -473,23 +480,49 @@ class SheetRenderer:
             kpis.append((f"{100 * ovs.SLOTS.sum() / total:.0f}%",
                          f"are overseas\n({ovs.SLOTS.sum()} {cfg.value_label}, {n_c} countr{'y' if n_c == 1 else 'ies'})"))
         x_end = self.W - 0.4
+        left_kpi = x_end
         for i, (big, small) in enumerate(reversed(kpis)):
             x = x_end - 2.0 - i * 2.55
-            t.text(x, ty + 0.05, big, fontsize=fs(27), weight="bold", color=cfg.classes.colors[-1], va="center", ha="right")
+            h = t.text(x, ty + 0.05, big, fontsize=fs(27), weight="bold", color=cfg.classes.colors[-1], va="center",
+                       ha="right")
             t.text(x + 0.1, ty + 0.05, small, fontsize=fs(9.5), color=INK, va="center", linespacing=1.3)
+            left_kpi = min(left_kpi, h.get_window_extent(renderer=self.renderer).x0 / self.fig.dpi)
+        max_w = left_kpi - 0.4 - 0.35
+        _, size = self._fit(0.4, ty + 0.28, title, 30, max_w, 18, weight="bold", color=INK, va="center")
+        self.title_size = size
+        n_all = len(st) + len(self.meta.excluded)
+        sub = cfg.subtitle
+        if sub == "auto":
+            ex = f"; {', '.join(n.title() for n in self.meta.excluded)} {'has' if len(self.meta.excluded) == 1 else 'have'} 0 {cfg.value_label}" if self.meta.excluded else ""
+            sub = (f"{total} authorized {cfg.value_label} across {n_all} duty stations ({len(st)} mapped{ex}).  "
+                   f"Circle size = number of {cfg.value_label}.  Color = how likely an assignment there is, from that "
+                   f"station’s share of all {cfg.value_label}.")
+        h, ssize = self._fit(0.4, ty - 0.32, sub, 13, max_w, 9.5, color=MUTED, va="center")
+        if h.get_window_extent(renderer=self.renderer).width / self.fig.dpi > max_w:
+            # still too long at the minimum size: wrap onto two lines
+            width = max(40, int(len(sub) * max_w / (h.get_window_extent(renderer=self.renderer).width / self.fig.dpi)))
+            h.set_text("\n".join(textwrap.wrap(sub, width)[:2]))
+            h.set_linespacing(1.15)
 
     def draw_footer(self) -> None:
         cfg, m = self.cfg, self.meta
         s = [f"Data: {m.source_name}; {m.total} {cfg.value_label}, {len(self.st) + len(m.excluded)} duty stations"
              + (f" ({cfg.mos})" if cfg.mos else "") + "."]
+        s.extend(cfg.notes)                      # what the user (or the batch) says about the data comes first
         if m.excluded:
             s.append(f"Not mapped (0 {cfg.value_label}): {', '.join(n.title() for n in m.excluded)}.")
         if m.merged:
-            s.append(f"Duplicate source rows combined for {', '.join(m.merged)}.")
+            if len(m.merged) <= 6:
+                s.append(f"Duplicate source rows combined for {', '.join(m.merged)}.")
+            else:
+                s.append(f"Several source rows for the same station were combined at {len(m.merged)} stations "
+                         "(see N_RECORDS in duty_station_table.csv).")
         if m.dropped:
             s.append(f"Dropped (no coordinates): {', '.join(m.dropped)}.")
         if m.fuzzy:
             s.append(f"Name matches accepted by similarity: {'; '.join(m.fuzzy)}.")
+        if getattr(m, "towns", None):
+            s.append(f"Placed at the town centre (GeoNames): {'; '.join(t.split(' → ')[1] for t in m.towns)}.")
         if m.approx_coords:
             s.append("Point locations are approximate installation-level placements, not surveyed coordinates.")
         s.append("Projections: Equal Earth (world), Albers Equal Area Conic (continental U.S.), Lambert Azimuthal Equal "
@@ -499,7 +532,6 @@ class SheetRenderer:
                 s.append(f"Frame {f.letter}: {n}.")
         s.append("World frame: circles are theater totals at the slot-weighted centre of their stations; black dots are "
                  "the stations. Lettered boxes show where each detail frame sits. Basemap: Natural Earth.")
-        s.extend(cfg.notes)
         date = cfg.date if cfg.date != "auto" else _dt.date.today().strftime("%d %b %Y").lstrip("0")
         s.append(f"Prepared {date}" + (f" by {cfg.prepared_by}" if cfg.prepared_by else "") + " with slotmap-tools.")
         width = int((self.W - 0.8) * 11.6 / self.fsx)

@@ -6,7 +6,7 @@ wainwright,Fort Wainwright,AK,USA,64.8280,-147.6450,FORT WAINWRIGHT,approx,
 greely,Fort Greely,AK,USA,63.9700,-145.7300,FORT GREELY,approx,
 huachuca,Fort Huachuca,AZ,USA,31.5550,-110.3500,FORT HUACHUCA,approx,
 yuma_pg,Yuma Proving Ground,AZ,USA,32.8400,-114.4000,YUMA PROVING GROUND|YPG,approx,
-irwin,Fort Irwin,CA,USA,35.2650,-116.6850,FORT IRWIN|NATIONAL TRAINING CENTER|NTC,approx,
+irwin,Fort Irwin,CA,USA,35.2650,-116.6850,FORT IRWIN|NATIONAL TRAINING CENTER|NTC|NTC AND FORT IRWIN,approx,
 monterey,Presidio of Monterey,CA,USA,36.6000,-121.8950,PRESIDIO OF MONTEREY|DLIFLC|DEFENSE LANGUAGE INSTITUTE,approx,
 hunter_liggett,Fort Hunter Liggett,CA,USA,35.9600,-121.2300,FORT HUNTER LIGGETT,approx,
 carson,Fort Carson,CO,USA,38.7400,-104.7900,FORT CARSON,approx,
@@ -55,7 +55,7 @@ carlisle,Carlisle Barracks,PA,USA,40.2100,-77.1700,CARLISLE BARRACKS|US ARMY WAR
 jackson,Fort Jackson,SC,USA,34.0350,-80.9000,FORT JACKSON,approx,
 bliss,Fort Bliss,TX,USA,31.8100,-106.4200,FORT BLISS,approx,
 hood,Fort Hood,TX,USA,31.1350,-97.7750,FORT HOOD|FORT CAVAZOS,approx,renamed 2023; name restored 2025
-sam_houston,JBSA-Fort Sam Houston,TX,USA,29.4580,-98.4350,FORT SAM HOUSTON|JBSA|JOINT BASE SAN ANTONIO|JBSA-FORT SAM HOUSTON,approx,
+sam_houston,JBSA-Fort Sam Houston,TX,USA,29.4580,-98.4350,FORT SAM HOUSTON|JBSA|JOINT BASE SAN ANTONIO|JBSA-FORT SAM HOUSTON|JBSA FT SAM HOUST|JBSA FT SAM HOUSTON,approx,
 lackland,JBSA-Lackland,TX,USA,29.3850,-98.6180,LACKLAND AFB|JBSA-LACKLAND|JBSA LACKLAND,approx,
 white_sands,White Sands Missile Range,NM,USA,32.3830,-106.4790,WHITE SANDS MISSILE RANGE|WSMR,approx,
 rucker,Fort Rucker,AL,USA,31.3450,-85.7150,FORT RUCKER|FORT NOVOSEL,approx,renamed 2023; name restored 2025
@@ -68,9 +68,9 @@ baumholder,Baumholder,,GERMANY,49.6500,7.3300,BAUMHOLDER,approx,same installatio
 smith_bks,Smith Barracks,,GERMANY,49.6530,7.3350,SMITH BARRACKS|SMITH BARRACKS BAUMHOLDER,approx,same installation as Baumholder
 graf_east,East Camp Grafenwöhr,,GERMANY,49.7000,11.9400,EAST CAMP GRAFENWOEHR|EAST CAMP GRAFENWOHR,approx,
 tower_bks,Tower Barracks,,GERMANY,49.6980,11.9340,TOWER BARRACKS|GRAFENWOEHR|GRAFENWOHR,approx,
-rose_bks,Rose Barracks,,GERMANY,49.6100,11.8000,ROSE BARRACKS|VILSECK,approx,
-hohenfels,Hohenfels,,GERMANY,49.2200,11.8400,HOHENFELS|JMRC,approx,
-clay,Lucius D. Clay Kaserne,,GERMANY,50.0500,8.3250,LUCIUS D CLAY KASERNE|CLAY KASERNE|WIESBADEN,approx,
+rose_bks,Rose Barracks,,GERMANY,49.6100,11.8000,ROSE BARRACKS|VILSECK|SOUTH CAMP VILSECK|VILSECK SOUTH CAMP,approx,
+hohenfels,Hohenfels,,GERMANY,49.2200,11.8400,HOHENFELS|JMRC|HOHENFELS TRAINING AREA|JMRC HOHENFELS,approx,
+clay,Lucius D. Clay Kaserne,,GERMANY,50.0500,8.3250,LUCIUS D CLAY KASERNE|CLAY KASERNE|WIESBADEN|WIESBADEN CLAY KS,approx,
 mainz_kastel,Mainz-Kastel,,GERMANY,50.0000,8.2900,MAINZ-KASTEL|MAINZ KASTEL,approx,
 panzer_kl,Panzer Kaserne,,GERMANY,49.4310,7.7600,PANZER KASERNE KAISERSLAUTERN|KAISERSLAUTERN,approx,
 panzer_bb,Panzer Kaserne (Böblingen),,GERMANY,48.6950,9.0450,PANZER KASERNE BOEBLINGEN|PANZER KASERNE BOBLINGEN,approx,
@@ -80,15 +80,15 @@ landstuhl,Landstuhl RMC,,GERMANY,49.4000,7.5500,LANDSTUHL|LANDSTUHL REGIONAL MED
 patch,Patch Barracks,,GERMANY,48.7330,9.1000,PATCH BARRACKS,approx,
 kelley,Kelley Barracks,,GERMANY,48.7160,9.1650,KELLEY BARRACKS,approx,
 katterbach,Katterbach Kaserne,,GERMANY,49.3100,10.6300,KATTERBACH|KATTERBACH KASERNE|ANSBACH,approx,
-ederle,Caserma Ederle,,ITALY,45.5350,11.5650,CASERMA EDERLE|VICENZA,approx,
-del_din,Caserma Del Din,,ITALY,45.5650,11.5300,CASERMA DEL DIN,approx,
+ederle,Caserma Ederle,,ITALY,45.5350,11.5650,CASERMA EDERLE|VICENZA|CAMP EDERLE,approx,
+del_din,Caserma Del Din,,ITALY,45.5650,11.5300,CASERMA DEL DIN|RENATO DEL DIN|CASERMA RENATO DEL DIN,approx,
 shape,SHAPE,,BELGIUM,50.5000,3.9800,SHAPE|SUPREME HEADQUARTERS ALLIED POWERS EUROPE|CHIEVRES,approx,
 poznan,Poznań,,POLAND,52.4100,16.9300,POZNAN|POZNAN (CIVIL AIR PATROL),approx,city centroid
 bondsteel,Camp Bondsteel,,KOSOVO,42.3600,21.2500,CAMP BONDSTEEL,approx,
 zama,Camp Zama,,JAPAN,35.4900,139.4000,CAMP ZAMA|CAMP ZAMA SAGAMI GENERAL DEPOT|SAGAMI GENERAL DEPOT,approx,
 yokota,Yokota AB,,JAPAN,35.7480,139.3480,YOKOTA AB|YOKOTA AIR BASE,approx,
 okinawa,Okinawa,,JAPAN,26.3350,127.8000,OKINAWA,region,island centroid; replace with a specific installation if known
-torii,Torii Station,,JAPAN,26.4000,127.7300,TORII STATION,approx,
+torii,Torii Station,,JAPAN,26.4000,127.7300,"TORII STATION|CAMP ZAMA, TORII COMMUNICATION STATION|TORII COMMUNICATION STATION",approx,
 kadena,Kadena AB,,JAPAN,26.3550,127.7680,KADENA AB|KADENA AIR BASE,approx,
 casey,Camp Casey,,KOREA,37.9100,127.0600,CAMP CASEY,approx,
 hovey,Camp Hovey,,KOREA,37.9200,127.0700,CAMP HOVEY,approx,
@@ -104,3 +104,17 @@ buehring,Camp Buehring,,KUWAIT,29.7000,47.4200,CAMP BUEHRING,approx,
 al_udeid,Al Udeid AB,,QATAR,25.1170,51.3150,AL UDEID|AL UDEID AIR BASE,approx,
 nsa_bahrain,NSA Bahrain,,BAHRAIN,26.2100,50.6100,NSA BAHRAIN|NAVAL SUPPORT ACTIVITY BAHRAIN,approx,
 lemonnier,Camp Lemonnier,,DJIBOUTI,11.5470,43.1550,CAMP LEMONNIER,approx,
+wheeler,Wheeler AAF,HI,USA,21.4800,-158.0400,WHEELER ARMY AIRFIELD|WHEELER AAF,approx,https://en.wikipedia.org/wiki/Wheeler_Army_Airfield
+pearl_harbor,Pearl Harbor,HI,USA,21.3493,-157.9440,PEARL HARBOR NAVAL BASE (PORT)|PEARL HARBOR NAVAL BASE|NAVAL STATION PEARL HARBOR|NAVSTA PEARL HARBOR,approx,https://en.wikipedia.org/wiki/Naval_Station_Pearl_Harbor
+camp_smith,Camp H. M. Smith,HI,USA,21.3858,-157.9064,CAMP SMITH MARINE GROUND INSTALLATION|CAMP SMITH|CAMP H M SMITH,approx,https://en.wikipedia.org/wiki/Camp_H._M._Smith
+eglin,Eglin AFB,FL,USA,30.4894,-86.5422,EGLIN AIR FORCE BASE|EGLIN AFB,approx,https://en.wikipedia.org/wiki/Eglin_Air_Force_Base
+homestead,Homestead ARB,FL,USA,25.4883,-80.3836,HOMESTEAD HM-01 (STORAGE)|HOMESTEAD AIR RESERVE BASE|HOMESTEAD ARB,approx,https://en.wikipedia.org/wiki/Homestead_Air_Reserve_Base; HM-01 storage site placed at the air reserve base
+shaw,Shaw AFB,SC,USA,33.9731,-80.4728,SHAW AIR FORCE BASE|SHAW AFB,approx,https://en.wikipedia.org/wiki/Shaw_Air_Force_Base
+gillem,Fort Gillem,GA,USA,33.6202,-84.3289,FORT GILLEM|FT GILLEM|GILLEM ENCLAVE,approx,https://en.wikipedia.org/wiki/Fort_Gillem
+atterbury,Camp Atterbury,IN,USA,39.3500,-86.0330,CAMP ATTERBURY/CSMS 62/FMS 02/UTES 01|CAMP ATTERBURY|CAMP ATTERBURY-MUSCATATUCK,approx,https://en.wikipedia.org/wiki/Camp_Atterbury-Muscatatuck
+shelby,Camp Shelby,MS,USA,31.1975,-89.2056,CAMP SHELBY/FMS 06/CSMS 28/MATES 89|CAMP SHELBY|CAMP SHELBY JFTC,approx,https://www.latlong.net/place/camp-shelby-ms-usa-4704.html
+sheridan_usarc,Sheridan Reserve Center,IL,USA,42.2125,-87.8106,PHILLIP H SHERIDAN USAR COMPLEX|SHERIDAN RESERVE CENTER|FORT SHERIDAN,approx,https://en.wikipedia.org/wiki/Fort_Sheridan (former Fort Sheridan; the USAR center occupies part of the post)
+callaghan_usarc,Callaghan Rd USARC,TX,USA,29.4241,-98.4936,SAN ANTONIO CALLAGHAN USARC|CALLAGHAN RD USARC,city,Placed at San Antonio city centre (GeoNames); exact site not confirmed
+molesworth,RAF Molesworth,,UNITED KINGDOM,52.3794,-0.4050,MOLESWORTH HOSPITAL|RAF MOLESWORTH|MOLESWORTH,approx,"https://en.wikipedia.org/wiki/RAF_Molesworth; ""Molesworth Hospital"" placed at the station"
+sigonella,NAS Sigonella,,ITALY,37.4017,14.9222,SIGONELLA INTERNATIONAL AIRPORT|NAS SIGONELLA|SIGONELLA,approx,https://en.wikipedia.org/wiki/Naval_Air_Station_Sigonella
+stuttgart_apt,Stuttgart Airport,,GERMANY,48.6900,9.2219,STUTTGART INTERNATIONAL AIRPORT|STUTTGART AIRPORT,approx,https://en.wikipedia.org/wiki/Stuttgart_Airport

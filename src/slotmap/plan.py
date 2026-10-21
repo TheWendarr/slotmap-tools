@@ -251,19 +251,44 @@ def find_clusters(frame: Frame, st: pd.DataFrame, k: float, gap_pt: float, merge
     return [[gids[i] for i in g] for g in groups()]
 
 
+def _home_place(lon: float, lat: float, pl: pd.DataFrame, radius_km: float = 80.0):
+    """The place a station 'belongs to': near, and big. Returns (name, lon, lat) or None."""
+    cand = pl[(pl.longitude.between(lon - 1.2, lon + 1.2)) & (pl.latitude.between(lat - 0.8, lat + 0.8))]
+    cand = cand[cand.pop_max >= 50000]
+    if not len(cand):
+        return None
+    d = np.array([haversine_km(lon, lat, x, y) for x, y in zip(cand.longitude, cand.latitude)])
+    ok = d <= radius_km
+    if not ok.any():
+        return None
+    cand, d = cand[ok], d[ok]
+    score = d - 8.0 * np.log10(cand.pop_max.astype(float).values)   # km, traded against size
+    r = cand.iloc[int(np.argmin(score))]
+    return re.sub(r",\s*D\.?\s*C\.?$", "", str(r["name"]).strip()), float(r.longitude), float(r.latitude)
+
+
 def name_detail(gids: List[str], st: pd.DataFrame, basemap) -> str:
+    """Name a detail frame after the town(s) its stations belong to, weighted by slots.
+
+    One town holds the frame -> "Savannah area". Towns far apart (> 60 km) share it -> "Wiesbaden & Stuttgart".
+    """
     sub = st.set_index("GID").loc[gids]
-    lon, lat = mean_lonlat(sub.LON, sub.LAT)
-    if basemap is not None:
-        pl = basemap.get("places")
-        cand = pl[(pl.longitude.between(lon - 1.2, lon + 1.2)) & (pl.latitude.between(lat - 0.9, lat + 0.9))]
-        cand = cand[cand.pop_max >= 50000]
-        if len(cand):
-            d = np.hypot((cand.longitude - lon) * math.cos(math.radians(lat)), cand.latitude - lat)
-            score = d - 0.03 * np.log10(cand.pop_max)      # nearest, nudged toward bigger places
-            name = re.sub(r",\s*D\.?\s*C\.?$", "", str(cand.loc[score.idxmin(), "name"]).strip())
-            return f"{name} area"
-    return f"{sub.sort_values('SLOTS', ascending=False).NAME.iloc[0]} area"
+    top_station = sub.sort_values("SLOTS", ascending=False).NAME.iloc[0]
+    pl = basemap.get("places") if basemap is not None else None
+    if pl is None or not len(pl):
+        return f"{top_station} area"
+    homes: Dict[str, List[float]] = {}
+    for r in sub.itertuples():
+        h = _home_place(float(r.LON), float(r.LAT), pl)
+        key, hx, hy = h if h else (r.NAME, float(r.LON), float(r.LAT))
+        e = homes.setdefault(key, [0.0, hx, hy])
+        e[0] += max(float(r.SLOTS), 0.1)
+    ranked = sorted(homes.items(), key=lambda kv: -kv[1][0])
+    first, (_, fx, fy) = ranked[0]
+    far = [n for n, (_, x, y) in ranked[1:] if haversine_km(fx, fy, x, y) > 60]
+    if far:
+        return f"{first} & {far[0]}"
+    return f"{first} area"
 
 
 # ---------------------------------------------------------------------------- 5.7 displacement

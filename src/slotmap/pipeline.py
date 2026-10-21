@@ -34,6 +34,7 @@ class RunOptions:
     write_gdb: bool = True
     exports: List[str] = field(default_factory=list)
     quiet: bool = False
+    source_name: Optional[str] = None           # how the footer names the data (default: the table's file name)
 
 
 def slugify(s: str) -> str:
@@ -67,13 +68,18 @@ def run(opts: RunOptions) -> int:
 
     # 2 resolve
     gaz = Gazetteer.load(opts.gazetteer_local)
-    df, rep = resolve_table(ing.table, gaz, cfg.accept_fuzzy)
+    df, rep = resolve_table(ing.table, gaz, cfg.accept_fuzzy, cfg.fuzzy_auto_accept, cfg.use_places)
     rep.to_csv(out / "resolution_report.csv", index=False)
     df.to_csv(out / f"{slug}_normalized.csv", index=False)
+    # a station with 0 slots is listed in the footer, not mapped, so it never needs coordinates
+    slots_by_station = df.groupby("STATION").SLOTS.sum()
+    zero_names = set(slots_by_station[slots_by_station <= 0].index) if cfg.exclude_zero else set()
+    rep["NEEDS_REVIEW"] = rep.NEEDS_REVIEW & ~rep.STATION.isin(zero_names)
     review = rep[rep.NEEDS_REVIEW]
     counts = rep.RES_STATUS.value_counts().to_dict()
     _log(opts, f"[INFO] resolution: {counts}")
     dropped: List[str] = []
+    dropped_slots = 0
     if len(review):
         todo = pd.DataFrame({"id": [r.GID if r.RES_STATUS == "fuzzy" else "" for r in review.itertuples()],
                              "name": review.NAME, "state": "", "country": "", "lat": "", "lon": "",
@@ -88,7 +94,8 @@ def run(opts: RunOptions) -> int:
                   "to the table, or set accept_fuzzy: true), then re-run.", file=sys.stderr)
             return EXIT_UNRESOLVED
         bad = review[review.LAT.isna()]
-        dropped = bad.STATION.tolist()
+        dropped = sorted(set(bad.STATION))
+        dropped_slots = int(df[df.SRC_ROW.isin(bad.SRC_ROW)].SLOTS.sum())
         df = df[~df.SRC_ROW.isin(bad.SRC_ROW)]
     if opts.stop_after == "check":
         _log(opts, "[DONE] check passed")
@@ -99,12 +106,20 @@ def run(opts: RunOptions) -> int:
     st_all = enrich(st_all, total, cfg.classes.breaks_pct)
     zero = st_all[st_all.SLOTS <= 0] if cfg.exclude_zero else st_all.iloc[0:0]
     st = st_all[~st_all.GID.isin(zero.GID)].reset_index(drop=True)
+    if st.empty:
+        msg = (f"Nothing to map: no station with {cfg.value_label} has coordinates"
+               + (f" (dropped: {', '.join(dropped)})" if dropped else "") + ".")
+        print(f"[ERROR] {msg}", file=sys.stderr)
+        (out / "ingest_errors.json").write_text(json.dumps([msg], indent=2))
+        return EXIT_INPUT
     st = st.sort_values(["SLOTS", "NAME"], ascending=[False, True]).reset_index(drop=True)
     st["RANK"] = range(1, len(st) + 1)
     th = theater_totals(st, total, cfg.classes.breaks_pct)
     grp = group_totals(st_all, total)
     merged = st_all[st_all.N_RECORDS > 1].NAME.tolist()
-    fuzzy = [f"{r.STATION} → {r.NAME}" for r in rep[rep.RES_STATUS == "fuzzy"].itertuples() if not r.NEEDS_REVIEW]
+    fuzzy = sorted({f"{r.STATION} → {r.NAME}" for r in rep[rep.RES_STATUS == "fuzzy"].itertuples() if not r.NEEDS_REVIEW})
+    towns = sorted({f"{r.STATION} → {r.NAME}" for r in rep[rep.RES_STATUS == "city"].itertuples()
+                    if r.STATION not in zero_names})
 
     # 4 plan
     bm = B.Basemap.load(opts.basemap_dir)
@@ -146,14 +161,14 @@ def run(opts: RunOptions) -> int:
     # 6 render + 7 QA
     from .qa import run_checks, write_crops, write_report
     from .render import SheetMeta, SheetRenderer
-    meta = SheetMeta(total=total, source_name=Path(opts.table).name, excluded=zero.STATION.tolist(),
-                     merged=merged, fuzzy=fuzzy, dropped=dropped,
+    meta = SheetMeta(total=total, source_name=opts.source_name or Path(opts.table).name, excluded=zero.STATION.tolist(),
+                     merged=merged, fuzzy=fuzzy, dropped=dropped, towns=towns,
                      approx_coords=bool((st.COORD_QUALITY.isin(["approx", "region"])).any()))
     info = SheetRenderer(plan, st, th, cfg, meta, bm).render(out / f"{slug}_sheet")
     summary["outputs"]["sheet"] = info["files"]
     png = next((p for p in info["files"] if p.endswith(".png")), None)
     crops = write_crops(Path(png), plan, out / "crops", cfg.page.dpi) if png else []
-    checks = run_checks(plan, st, total, ing.stated_total, int(zero.SLOTS.sum()), dropped, fuzzy, info)
+    checks = run_checks(plan, st, total, ing.stated_total, int(zero.SLOTS.sum()) + dropped_slots, dropped, fuzzy, info)
     rep_json = write_report(out / "qa_report.json", checks, {"summary": summary, "crops": crops,
                                                              "footer_notes": info["footer_notes"],
                                                              "frames": info["frames"]})

@@ -23,8 +23,9 @@ it before the next stage runs.
 |---|----------|----------------|--------|
 | 2.1 | `Gazetteer.load(local=...)` | Load the bundled installation gazetteer plus a user-maintained local override file. | `gazetteer.py` |
 | 2.2 | `normalize_key(name)` | Uppercase, drop punctuation and admin tags `(ADMIN)`, `(AIN)`, `(CITY)`, expand `FT`→`FORT`, `AFB`, `AAF`, etc. | `gazetteer.py` |
-| 2.3 | `Gazetteer.resolve(name, state, country)` | Exact alias → normalized alias → fuzzy match (country-filtered) → unresolved, with a status and confidence. | `gazetteer.py` |
-| 2.4 | `resolve_table(df, gaz)` | Resolve every row; table LAT/LON columns win over the gazetteer; write `resolution_report.csv`. | `gazetteer.py` |
+| 2.3 | `Gazetteer.resolve(name, state, country)` | Exact alias → normalized alias → town (`(CITY)` names) → fuzzy match (country-filtered) → town fallback → unresolved, with a status and confidence. | `gazetteer.py` |
+| 2.4 | `resolve_table(df, gaz)` | Resolve every row; table LAT/LON columns win over the gazetteer; fuzzy matches ≥ `fuzzy_auto_accept` are accepted and footnoted; write `resolution_report.csv`. | `gazetteer.py` |
+| 2.6 | `places.lookup(name, country, postal)` | Town-centre placement from GeoNames (pop ≥ 1,000; fetched by `fetch-basemap`). U.S. towns must match the state; elsewhere the name must be unique in the country. | `places.py` |
 | 2.5 | `display_name(raw)` | Human label (`HICKAM AIR FORCE BASE (MILITARY AIRPORT)` → `Hickam AFB`). | `gazetteer.py` |
 
 ## 3. Aggregate — the numbers the map shows
@@ -97,4 +98,15 @@ it before the next stage runs.
 |---|----------|----------------|--------|
 | 8.1 | `SheetConfig.load / save` | YAML config: titles, class breaks, colours, page size, overrides. | `config.py` |
 | 8.2 | `run_pipeline(opts)` | All stages, each one skippable/re-runnable. | `pipeline.py` |
-| 8.3 | `slotmap` CLI | `init`, `ingest`, `data`, `plan`, `render`, `run`, `qa`, `fetch-basemap`, `gazetteer`. | `cli.py` |
+| 8.3 | `slotmap` CLI | `init`, `check`, `plan`, `data`, `run`, `batch`, `fetch-basemap`, `gazetteer`. | `cli.py` |
+
+## 9. Batch — many exports, every sheet
+
+| # | Function | What it covers | Module |
+|---|----------|----------------|--------|
+| 9.1 | `parse_code(posco, grade)` | `35G3O` → CMF 35, MOS 35G, skill level 3 (enlisted); `255A0` → warrant MOS 255A, split by grade; `35D00` → officer AOC 35D, split by grade. | `batch.py` |
+| 9.2 | `read_rows(path)` | Every sheet of a workbook (or a CSV) → canonical rows + position code, grade and component columns. | `batch.py` |
+| 9.3 | `make_splits(rows, opts)` | One split per CMF/MOS/level (`--by level`), per MOS (`--by mos`) or both; `--mos`, `--cmf`, `--compo` filters. | `batch.py` |
+| 9.4 | `preflight_resolve(splits)` | Resolve every station of the whole batch once; one `gazetteer_local_TODO.csv` listing which sheets need each name. 0-slot stations never block. | `batch.py` |
+| 9.5 | `build_config(split)` | Generated `sheet.yaml`: title, MOS tag, footer notes (codes combined, sources, component filter), then the base config and `overrides/` files merged on top. | `batch.py` |
+| 9.6 | `run_batch(opts)` | Write tables + configs, build sheets in parallel, copy PDFs to `sheets/`, write `index.csv` / `index.md`, optional zip. | `batch.py` |

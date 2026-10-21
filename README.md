@@ -31,13 +31,54 @@ directly so both tools name feature classes the same way. Open the `.gdb` in Arc
 ```bash
 git clone <this repo> && cd slotmap-tools
 python -m pip install -e ".[dev]"     # or: conda env create -f environment.yml
-slotmap fetch-basemap                 # Natural Earth layers, ~90 MB, cached once
+slotmap fetch-basemap                 # Natural Earth layers (~90 MB) + GeoNames town list (~17 MB), cached once
 python -m pytest -q
 ```
 
 Python ≥ 3.10. FileGDB writing needs GDAL ≥ 3.6 (included in current pyogrio wheels and conda-forge).
 
-## Quick start
+## Quick start: position exports → every sheet
+
+Give it one or more standard position exports (the `LOCATION / STATE / CNTRY / POSCO / … / TOTAUTH`
+workbooks) and it builds a sheet for every skill level of every MOS in them:
+
+```bash
+slotmap batch data/35G.xlsx --prepared-by "SSG McGowan"            # one MOS -> 35G1 … 35G4
+slotmap batch data/CMF35.xlsx data/CMF25.xlsx -o out/cmf35_25      # several MOSs and CMFs at once
+slotmap batch data/ --by both --zip                                 # a whole folder; also one all-levels sheet per MOS
+slotmap batch data/CMF35.xlsx --mos 35G 35F --list                  # just show what would be built
+```
+
+How it splits: the position code decides. `35G3O` → CMF 35, MOS 35G, skill level 3 (SSG);
+every `35G3x` code variant (`35G3O`, `35G3S`, `35G34` …) is combined on that sheet and the footer says so.
+Warrant (`255A0`) and officer (`35D00`) codes are split by a `GRADE` column when there is one, otherwise
+one sheet per MOS. `--compo AC|RC` filters on a `COMPO` column if the export has one.
+
+What you get in the output folder (default `out/batch`):
+
+| Path | Contents |
+|---|---|
+| `index.md`, `index.csv` | One row per sheet: slots, stations mapped, largest share, QA status |
+| `sheets/35G3_sheet.pdf` … | Every finished sheet in one place |
+| `35/35G/SL3/` | `table.csv` (the split that was mapped), `sheet.yaml` (generated config), `out/` (GIS layers, QA, crops) |
+| `gazetteer_local_TODO.csv` | Only if a station with slots has no coordinates (see below) |
+
+Station names are resolved once for the whole batch. Known installations and their spellings come from
+the bundled list; `(CITY)` entries such as `MIAMI FL (CITY)` are placed at the town centre from the GeoNames
+town list (`slotmap fetch-basemap` downloads it); confident misspellings (`JBSA FT SAM HOUST`) are accepted
+and footnoted. If a name with slots still can't be placed, the batch stops **before** building anything
+and writes one `gazetteer_local_TODO.csv` that says which sheets need it. Fill in the coordinates, save it
+as `gazetteer_local.csv`, and run the same command again — or add `--allow-unresolved` to build now and
+list the missing stations on each sheet. Stations with 0 slots never stop a batch.
+
+To tune a sheet so the change survives the next export, put a partial config in `overrides/`
+(`overrides/35G.yaml` for every 35G sheet, `overrides/35G3.yaml` for one) — see
+[docs/CONFIG.md](docs/CONFIG.md#batch-overrides-overrides).
+
+Exit codes: `0` all built (some may be `warn`), `1` a sheet failed QA or errored, `2` input problem,
+`3` stations need coordinates.
+
+## Quick start: one table, step by step
 
 ```bash
 slotmap init work/25D --mos 25D                      # sheet.yaml + blank slots.csv
@@ -67,7 +108,7 @@ Repeated rows for one installation are combined (and noted on the sheet).
 
 ### Station names
 
-`src/slotmap/data/installations.csv` holds about 100 Army and joint installations at home and
+`src/slotmap/data/installations.csv` holds about 120 Army and joint installations at home and
 overseas, with aliases (including the 2023 names that were reverted in 2025, e.g. Fort Liberty →
 Fort Bragg). Add or correct places in your own `gazetteer_local.csv` (same columns; it overrides
 the bundled file). When a name can't be resolved the run stops with exit code 3 and writes
@@ -112,7 +153,9 @@ every crop, tune labels through config, and report what it changed.
 
 ## Caveats
 
-- Coordinates are installation-level approximations, not surveyed points.
+- Coordinates are installation-level approximations, not surveyed points. Town-centre placements
+  (`(CITY)` entries) use GeoNames data (CC BY 4.0) via [cities.json](https://github.com/lutangar/cities.json)
+  and are listed on each sheet.
 - "Likelihood" is the station's share of slots. Real assignment odds depend on vacancies, rank,
   timing and Army needs; the legend says this.
 - Authorization data may be controlled (CUI/FOUO) depending on its source. `data/`, `work/` and

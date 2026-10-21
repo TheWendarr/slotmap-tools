@@ -23,7 +23,7 @@ def run_checks(plan: Plan, st: pd.DataFrame, total: int, stated_total, excluded_
     mapped = int(st.SLOTS.sum())
     ok = mapped + excluded_slots == total and (stated_total is None or stated_total == total)
     out.append(_check("totals", "pass" if ok else "fail",
-                      f"mapped {mapped} + not mapped {excluded_slots} = {mapped + excluded_slots}; table total {total}; "
+                      f"mapped {mapped} + not mapped (0-slot or dropped) {excluded_slots} = {mapped + excluded_slots}; table total {total}; "
                       f"stated total {stated_total}"))
     owned = [g for f in plan.frames for g in f.members]
     dup = sorted({g for g in owned if owned.count(g) > 1})
@@ -58,7 +58,7 @@ def run_checks(plan: Plan, st: pd.DataFrame, total: int, stated_total, excluded_
         lab_out += [f"{info['letter']}:{k}" for k in info.get("outside", []) if not k.startswith(("place:", "area:"))]
     out.append(_check("labels", "pass" if not lab_over and not lab_out else "warn",
                       {"overlapping": lab_over, "outside_frame": lab_out}))
-    out.append(_check("resolution", "pass" if not fuzzy and not dropped else "warn",
+    out.append(_check("resolution", "warn" if dropped else ("info" if fuzzy else "pass"),
                       {"fuzzy_accepted": fuzzy, "dropped_unresolved": dropped}))
     if plan.warnings:
         out.append(_check("planner", "warn", plan.warnings))

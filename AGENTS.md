@@ -21,6 +21,23 @@ python -m pytest -q                     # should pass offline
 FileGDB output needs a GDAL build with OpenFileGDB **write** support (GDAL ≥ 3.6; pip wheels of
 pyogrio and conda-forge both have it). If it is missing the run still succeeds and writes the GeoPackage.
 
+## 0.5 Position exports (POSCO tables): use `batch`
+
+If the user hands you one or more standard position exports (columns like `LOCATION, STATE, CNTRY,
+POSCO, …, TOTAUTH`) and wants maps by skill level / MOS / CMF, run **one command** instead of steps 1–5:
+
+```bash
+slotmap batch data/*.xlsx -o work/batch --prepared-by "<name>"     # add --by both for all-levels sheets too
+```
+
+- Exit `3`: open `work/batch/gazetteer_local_TODO.csv` (one row per missing station, with the sheets that
+  need it), add sourced coordinates as in step 2, save as `gazetteer_local.csv`, re-run the same command.
+- Then review as in step 5: `work/batch/index.md` first, then each `…/out/crops/overview.png`.
+- Tune through `overrides/<MOS>.yaml` or `overrides/<MOS><level>.yaml` (same keys as `sheet.yaml`), not by
+  editing the generated `sheet.yaml` files — those are rewritten on every run.
+- Stations you confirm belong in `src/slotmap/data/installations.csv` (with the source in `notes`) when the
+  user wants them kept for every future export; otherwise in `gazetteer_local.csv`.
+
 ## 1. Get the table into a file
 
 Accepted: `.csv`, `.tsv`, `.xlsx`, `.xls`. Header names are matched loosely (`LOCATION`,

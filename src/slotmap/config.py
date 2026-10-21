@@ -59,6 +59,8 @@ class SheetConfig:
     value_label: str = "slots"           # what one unit is called ("slots", "authorizations", "billets")
     exclude_zero: bool = True            # stations with 0 slots are listed in the footer, not mapped
     accept_fuzzy: bool = False           # fuzzy gazetteer matches must be confirmed unless True
+    fuzzy_auto_accept: float = 0.92      # ...except matches at least this similar, which are accepted and footnoted
+    use_places: bool = True              # place "(CITY)" names, and otherwise-unknown town names, at the town centre
     symbol_max_diameter_pt: float = 36.0 # diameter of the largest station circle
     world_max_diameter_pt: float = 64.0  # cap for theater circles on the world frame
     fonts: List[str] = field(default_factory=lambda: ["Inter", "Arial", "Helvetica", "DejaVu Sans"])

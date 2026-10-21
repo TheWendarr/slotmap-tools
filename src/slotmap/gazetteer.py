@@ -142,8 +142,14 @@ class Gazetteer:
         r = self.df.iloc[i]
         return Match(status, r["id"], r["name"], float(r["lat"]), float(r["lon"]), score, [], r["coord_quality"])
 
-    def resolve(self, name: str, state: str = "", country: str = "", cutoff: float = 0.84) -> Match:
-        """2.3 exact alias -> normalized alias -> fuzzy (same country) -> unresolved."""
+    def resolve(self, name: str, state: str = "", country: str = "", cutoff: float = 0.84,
+                use_places: bool = True) -> Match:
+        """2.3 exact alias -> normalized alias -> town/city (GeoNames) -> fuzzy (same country) -> unresolved.
+
+        Names tagged "(CITY)" go to the town lookup before fuzzy matching, so "DUBLIN CA (CITY)" is never
+        fuzzy-matched to an installation. Untagged names fall back to an exact town name in the same state or
+        country only after fuzzy matching fails.
+        """
         key = str(name).strip().upper()
         if key in self.exact:
             return self._row(self.exact[key], "exact", 1.0)
@@ -153,6 +159,13 @@ class Gazetteer:
                 return self._row(self.norm[nk], "normalized", 1.0)
         nk = normalize_key(name)
         cc = canon_country(country)
+        postal = state_postal(state)
+        city = None
+        if use_places:
+            from . import places
+            city = places.lookup(name, cc or "USA", postal)
+            if city and places.is_city_tagged(name):
+                return Match("city", None, city[2], city[0], city[1], 1.0, [], "city")
         pool = self.df if not cc else self.df[(self.df.country == cc) | (self.df.country == "")]
         cands: List[Tuple[float, int, str]] = []
         for i, r in pool.iterrows():
@@ -171,23 +184,33 @@ class Gazetteer:
             m = self._row(cands[0][1], "fuzzy", cands[0][0])
             m.suggestions = sugg
             return m
+        if city:
+            return Match("city", None, city[2], city[0], city[1], 0.9, sugg, "city")
         return Match("unresolved", None, display_name(name), None, None, cands[0][0] if cands else 0.0, sugg)
 
 
-def resolve_table(df: pd.DataFrame, gaz: Gazetteer, accept_fuzzy: bool = False) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def resolve_table(df: pd.DataFrame, gaz: Gazetteer, accept_fuzzy: bool = False,
+                  fuzzy_auto_accept: float = 0.92, use_places: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """2.4 Add GID/NAME/LAT/LON/RES_STATUS to every row. Table coordinates win.
 
-    Returns (resolved_df, report_df). Rows that are unresolved (or fuzzy without accept_fuzzy) have NEEDS_REVIEW=True.
+    Returns (resolved_df, report_df). Rows that are unresolved, or fuzzy below `fuzzy_auto_accept` without
+    accept_fuzzy, have NEEDS_REVIEW=True.
     """
     out = df.copy()
     rows = []
+    cache: Dict[Tuple[str, str, str], Match] = {}
     for r in out.itertuples():
-        m = gaz.resolve(r.STATION, r.STATE, r.COUNTRY)
+        ck = (r.STATION, r.STATE, r.COUNTRY)
+        if ck not in cache:
+            cache[ck] = gaz.resolve(r.STATION, r.STATE, r.COUNTRY, use_places=use_places)
+        m = cache[ck]
         lat, lon, status, quality = m.lat, m.lon, m.status, m.coord_quality
         if pd.notna(r.LAT) and pd.notna(r.LON):
             lat, lon, status, quality = r.LAT, r.LON, "table", "table"
-        gid = m.gid or ("tbl_" + normalize_key(r.STATION).lower().replace(" ", "_"))
-        review = status == "unresolved" or (status == "fuzzy" and not accept_fuzzy)
+        prefix = "city_" if status == "city" else "tbl_"
+        gid = m.gid or (prefix + normalize_key(m.name if status == "city" else r.STATION).lower().replace(" ", "_")
+                        + (("_" + state_postal(r.STATE).lower()) if status == "city" and state_postal(r.STATE) else ""))
+        review = status == "unresolved" or (status == "fuzzy" and not accept_fuzzy and m.score < fuzzy_auto_accept)
         rows.append(dict(SRC_ROW=r.SRC_ROW, STATION=r.STATION, GID=gid, NAME=m.name, LAT=lat, LON=lon,
                          RES_STATUS=status, RES_SCORE=round(m.score, 3), COORD_QUALITY=quality,
                          SUGGESTIONS="; ".join(m.suggestions), NEEDS_REVIEW=review))
