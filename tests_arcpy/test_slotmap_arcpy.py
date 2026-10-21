@@ -29,7 +29,10 @@ from slotmap_arcpy.geo import CONUS, LAEA, Albers, EqualEarth  # noqa: E402
 from slotmap_arcpy.gazetteer import Gazetteer  # noqa: E402
 from slotmap_arcpy.xlsx import read_xlsx, rows_to_records  # noqa: E402
 
-DATA = HERE / "data"
+from fixtures import write_fixtures  # noqa: E402
+
+DATA = Path(tempfile.mkdtemp(prefix="slotmap_fixtures_"))
+write_fixtures(DATA)
 
 
 class Tmp(unittest.TestCase):
@@ -106,16 +109,17 @@ class TestGazetteer(Tmp):
         p = places.cache_path(self.data_dir)
         p.parent.mkdir(parents=True)
         p.write_text(json.dumps([
-            {"name": "Dublin", "lat": "37.70", "lng": "-121.94", "country": "US", "admin1": "CA"},
-            {"name": "Dublin", "lat": "32.54", "lng": "-82.90", "country": "US", "admin1": "GA"},
+            {"name": "Pleasanton", "lat": "37.66", "lng": "-121.87", "country": "US", "admin1": "CA"},
+            {"name": "Pleasanton", "lat": "28.97", "lng": "-98.48", "country": "US", "admin1": "TX"},
             {"name": "Brunssum", "lat": "50.95", "lng": "5.97", "country": "NL", "admin1": "05"}]))
         places.clear_cache()
         g = Gazetteer.load(data_dir=self.data_dir)
-        m = g.resolve("DUBLIN CA (CITY)", "CA", "USA")
+        m = g.resolve("PLEASANTON CA (CITY)", "CA", "USA")
         self.assertEqual(m.status, "city")
-        self.assertAlmostEqual(m.lat, 37.70)
+        self.assertAlmostEqual(m.lat, 37.66)
         self.assertEqual(g.resolve("BRUNSSUM (CITY)", "", "NETHERLANDS").status, "city")
-        self.assertEqual(g.resolve("DUBLIN (CITY)", "", "USA").status, "unresolved")
+        self.assertEqual(g.resolve("PLEASANTON (CITY)", "", "USA").status, "unresolved")   # no state: not guessed
+        self.assertEqual(g.resolve("MIAMI FL (CITY)", "FL", "USA").status, "city")         # bundled town entry
         places.clear_cache()
 
     def test_known_spellings(self):

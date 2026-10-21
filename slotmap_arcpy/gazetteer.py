@@ -13,7 +13,6 @@ from . import places
 
 GAZ_COLS = ["id", "name", "state", "country", "lat", "lon", "aliases", "coord_quality", "notes"]
 LOCAL_DEFAULT = Path("gazetteer_local.csv")
-DATA_FILE = Path(__file__).resolve().parent / "data" / "installations.csv"
 
 COUNTRY_CANON = {
     "USA": "USA", "US": "USA", "UNITED STATES": "USA", "UNITED STATES OF AMERICA": "USA",
@@ -138,7 +137,8 @@ class Gazetteer:
 
     @classmethod
     def load(cls, local: Optional[Path] = None, data_dir: Optional[Path] = None) -> "Gazetteer":
-        base = _read_csv(DATA_FILE)
+        from .installations_data import COLUMNS, ROWS
+        base = [dict(zip(COLUMNS, [str(v) for v in r])) for r in ROWS]
         local = Path(local) if local else LOCAL_DEFAULT
         rows, seen = [], set()
         frames = []
@@ -166,6 +166,8 @@ class Gazetteer:
 
     def _row(self, i: int, status: str, score: float) -> Match:
         r = self.rows[i]
+        if r["coord_quality"] == "city" and status in ("exact", "normalized"):
+            status = "city"                      # a bundled town-centre entry is still a town placement
         return Match(status, r["id"], r["name"], float(r["lat"]), float(r["lon"]), score, [], r["coord_quality"])
 
     def resolve(self, name: str, state: str = "", country: str = "", cutoff: float = 0.84,

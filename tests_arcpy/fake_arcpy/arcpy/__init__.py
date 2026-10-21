@@ -9,7 +9,6 @@ import os
 from types import SimpleNamespace
 
 CALLS = []
-TEMPLATE_JSON = os.path.join(os.path.dirname(__file__), "template_layout.json")
 
 
 def _log(*a):
@@ -343,8 +342,8 @@ class ArcGISProject(object):
         assert str(path).lower().endswith(".aprx") and os.path.exists(str(path)), path
         self.filePath = str(path)
         self._maps = {}
-        with open(TEMPLATE_JSON, encoding="utf-8") as fh:
-            self._layouts = [Layout(json.load(fh), self)]
+        from .template_layout import TEMPLATE
+        self._layouts = [Layout(copy.deepcopy(TEMPLATE), self)]
 
     def listLayouts(self, wildcard=None):
         return [l for l in self._layouts if wildcard is None or l.name == wildcard]
