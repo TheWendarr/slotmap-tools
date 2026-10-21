@@ -14,3 +14,10 @@ __pycache__/
 .venv/
 build/
 dist/
+# ArcGIS Pro working files next to the template
+pro_template/*.atbx
+pro_template/.backups/
+pro_template/ImportLog/
+pro_template/Index/
+pro_template/GpMessages/
+pro_template/*.gdb/

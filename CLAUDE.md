@@ -17,4 +17,7 @@ slotmap plan  data/<table>.csv -c work/<MOS>/sheet.yaml -o work/<MOS>/out   # lo
 slotmap run   data/<table>.csv -c work/<MOS>/sheet.yaml -o work/<MOS>/out   # look at crops/, read qa_report.json
 ```
 
+ArcPy-only machines (stdlib + ArcGIS Pro): `python -m slotmap_arcpy batch …` — see ARCPY.md; tests with
+`python -m unittest discover -s tests_arcpy`.
+
 Tune with `sheet.yaml` and `gazetteer_local.csv`, not code. Run `python -m pytest -q` after any code change.

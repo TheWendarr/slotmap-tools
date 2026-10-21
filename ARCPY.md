@@ -1,0 +1,79 @@
+# slotmap-tools — ArcPy edition (`arcpy-tools` branch)
+
+The same pipeline as the main tool for a machine that has **only the Python standard library and ArcPy**
+(ArcGIS Pro 2.5 or newer, including 2.x; Python 3.7+). Nothing else gets installed.
+
+| Stage | How |
+|---|---|
+| Read `.xlsx` / `.csv` / `.tsv` | standard library (`zipfile` + XML). `.xls` goes through ArcPy's Excel To Table |
+| Match station names, town placement, splits, frame planning, QA | standard library |
+| Equal-area projections for planning | pure Python (matches PROJ to the millimetre on the sphere) |
+| FileGDB + GeoPackage | ArcPy (`CreateFileGDB`, `CreateFeatureclass`, insert cursors, `CreateSQLiteDatabase`) |
+| Map sheet | ArcPy mapping: one layout, one map per frame, Natural Earth basemap, unique-value symbols, Maplex labels |
+| Output | PDF, PNG, and an editable `.aprx` per sheet, plus per-frame PNGs for review |
+
+The package is the `slotmap_arcpy` folder. It runs from the repo folder with no install step.
+
+## Set up the machine (once)
+
+1. **Copy this repository** onto the machine. A clone works, or the folder on a drive.
+2. **Basemap data.** Copy the folder `~/.cache/slotmap` from a machine that ran `slotmap fetch-basemap`.
+   It holds `natural_earth\` and `places\`. Put it at `%USERPROFILE%\.cache\slotmap`, or anywhere you
+   like and pass `--data-dir`. On a machine with internet access, `python -m slotmap_arcpy fetch-basemap`
+   downloads it.
+3. **Template project.** Follow [pro_template/TEMPLATE.md](pro_template/TEMPLATE.md), then run
+   `python -m slotmap_arcpy check-template`.
+
+Run commands from **Start ▸ ArcGIS ▸ Python Command Prompt**, which is ArcGIS Pro's own Python, inside
+the repo folder.
+
+## Use it
+
+```
+python -m slotmap_arcpy batch data\35G.xlsx --prepared-by "SSG McGowan"
+python -m slotmap_arcpy batch data\CMF35.xlsx data\CMF25.xlsx -o out\cmf35_25
+python -m slotmap_arcpy batch data --by both --zip
+python -m slotmap_arcpy batch data\CMF35.xlsx --mos 35G 35F --list
+```
+
+The output matches the main tool. `out\batch\index.md` lists one row per sheet. `sheets\` has every
+PDF. Each split gets its own folder, for example `35\35G\SL3\` with `table.csv`, `sheet.json` and
+`out\`. The `out\` folder holds the `.gdb`, `.gpkg`, sheet PDF/PNG, `.aprx`, QA report and crops.
+
+Single table, step by step: `check` → `plan` → `run`. These are the same stages as the main tool's
+commands, and only `data` and `run` need ArcPy:
+
+```
+python -m slotmap_arcpy check data\25D.csv -o work\25D
+python -m slotmap_arcpy run   data\25D.csv -c work\25D\sheet.json -o work\25D\out
+```
+
+`python -m slotmap_arcpy batch … --tables-only` runs everything except ArcPy. It writes tables, splits,
+frame plans and QA, which is useful for checking an export before building maps.
+
+### Differences from the main branch
+
+- **Configs are JSON** (`sheet.json`, `overrides\35G.json`), because the standard library has no YAML
+  reader. The keys are the same. `python -m slotmap_arcpy init work\25D --mos 25D` writes a full
+  default file.
+- **Labels are placed by Maplex**, not by the main branch's label placer. `label_overrides` supports
+  `name` (the printed name) only. To move one label, open the sheet's `.aprx` in Pro.
+- **Scale bars** are drawn as graphics, and the legend circles as graphics, sized from the same symbol scale.
+- QA checks totals, frame ownership, stations inside their frame, symbol spacing, displacement and name
+  matching. The label-overlap check isn't available, because Maplex places the labels.
+
+## Exit codes
+
+`0` built (some sheets may be `warn`) · `1` a sheet failed QA or errored · `2` input or template problem ·
+`3` stations need coordinates (fill `gazetteer_local_TODO.csv`, save as `gazetteer_local.csv`, re-run).
+
+## Tests
+
+```
+python -m unittest discover -s tests_arcpy -v
+```
+
+Without ArcPy, the ArcPy stages run against `tests_arcpy\fake_arcpy`, a stand-in limited to the
+documented Pro 2.9 API that also validates the layout JSON. With real ArcPy, set `SLOTMAP_TEMPLATE` to your
+template `.aprx` to run a real end-to-end build. `tests_arcpy/preview_pagx.py` (a developer tool that needs
+matplotlib) draws a generated layout file for a quick look at the composition.

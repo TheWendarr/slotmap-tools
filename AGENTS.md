@@ -1,5 +1,9 @@
 # AGENTS.md — instructions for an LLM building a slot map sheet
 
+> **ArcPy edition.** If the machine has only the standard library and ArcPy (ArcGIS Pro), use
+> `python -m slotmap_arcpy …` instead of `slotmap …` (same commands, JSON configs instead of YAML, a template
+> project from `pro_template/TEMPLATE.md`). Read `ARCPY.md` first. Do not install packages on such a machine.
+
 You are operating **slotmap-tools**: it turns a table of authorized slots by duty station (any MOS)
 into GIS layers (GeoPackage + Esri FileGDB) and a print-ready multi-frame map sheet (PDF/PNG).
 Your job is to get the user's table into the tool cleanly, run it, check the result, and tune the

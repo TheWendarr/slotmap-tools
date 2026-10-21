@@ -1,5 +1,9 @@
 # slotmap-tools
 
+> **`arcpy-tools` branch:** for machines that have only the Python standard library and ArcPy
+> (ArcGIS Pro 2.5+), use the `slotmap_arcpy` package — see **[ARCPY.md](ARCPY.md)**. The rest of this
+> README describes the main (geopandas/matplotlib) tool, which is unchanged on this branch.
+
 Turn a table of **authorized slots by duty station** — for any MOS — into:
 
 - **GIS data**: an Esri **File Geodatabase** and a **GeoPackage** with a point feature class per
